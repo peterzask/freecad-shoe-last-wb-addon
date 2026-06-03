@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
+  <name>Shoelast WB</name>
+  <description>Parametric shoe last generator from foot measurements. Produces 3D printable STL and STEP files using Koleff/Knoefel geometric construction methods.</description>
+  <version>0.1.0</version>
+  <date>2026-06-03</date>
+  <maintainer email="zask.robots@gmail.com">RGrabbe</maintainer>
+  <license alias="LGPL2">LGPL-2.1-or-later</license>
+  <url type="repository">https://decaturboots.com</url>
+  <content>
+    <workbench>
+      <classname>ShoelastWorkbench</classname>
+    </workbench>
+  </content>
+  <dependency>numpy</dependency>
+</package>

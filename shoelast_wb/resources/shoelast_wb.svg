@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Shoe last side profile: heel at left, toe at right, insole at bottom -->
+  <path d="M 10 54
+           L 54 54
+           L 54 50
+           C 44 50 40 46 38 40
+           C 36 34 36 24 38 18
+           C 40 12 40 8 36 8
+           C 32 8 28 10 26 16
+           C 22 24 18 36 14 46
+           C 12 50 10 52 10 54 Z"
+        fill="#4f81bd" stroke="#2e5c8a" stroke-width="1.5" stroke-linejoin="round"/>
+  <line x1="10" y1="50" x2="54" y2="50"
+        stroke="#2e5c8a" stroke-width="1.5"/>
+</svg>
