@@ -1,56 +1,46 @@
-import os
-import sys
-from pathlib import Path
 import FreeCADGui as Gui
 import FreeCAD as App
-
-# Workbench root: the directory containing this InitGui.py.
-# __file__ is not defined when FreeCAD 1.x execs InitGui.py on Windows,
-# so fall back to searching sys.path for the directory that contains shoelast_wb/.
-try:
-    _wb_dir = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    _wb_dir = next(
-        (p for p in sys.path if os.path.isdir(os.path.join(p, "shoelast_wb"))),
-        ""
-    )
-_icon   = os.path.join(_wb_dir, "shoelast_wb", "resources", "shoelast_wb.svg")
-
-
-def _find_macros():
-    """Return the macros directory path, or None if not found.
-    Search order:
-      1. SHOELAST_MACROS env var (user sets this on Windows or non-standard installs)
-      2. macros/ subfolder bundled inside the workbench dir
-      3. Workbench dir itself (flat layout: all .py files alongside InitGui.py)
-      4. Linux dev path ~/00_ausr/work/freecad/macros (fallback for the dev machine)
-    """
-    env = os.environ.get("SHOELAST_MACROS", "").strip()
-    if env and os.path.isdir(env):
-        return env
-    bundled = os.path.join(_wb_dir, "macros")
-    if os.path.isdir(bundled):
-        return bundled
-    if os.path.isfile(os.path.join(_wb_dir, "uv_0.py")):
-        return _wb_dir
-    dev = os.path.join(str(Path.home()), "00_ausr", "work", "freecad", "macros")
-    if os.path.isdir(dev):
-        return dev
-    return None
 
 
 class ShoelastWorkbench(Gui.Workbench):
     MenuText = "Shoelast WB"
     ToolTip  = "Workbench to make 3D printable shoe lasts from foot measurements"
-    Icon     = ""  # set below - class body cannot see module-level vars under FreeCAD exec()
+    Icon     = ""  # set in Initialize() - module globals unreliable under FreeCAD exec()
 
     def Initialize(self):
-        macros = _find_macros()
+        import os, sys
+        from pathlib import Path
+
+        # Locate workbench root. __file__ is not set by FreeCAD's exec() on Windows,
+        # so fall back to searching sys.path for the dir that contains shoelast_wb/.
+        try:
+            wb_dir = os.path.dirname(os.path.abspath(__file__))
+        except NameError:
+            wb_dir = next(
+                (p for p in sys.path if os.path.isdir(os.path.join(p, "shoelast_wb"))),
+                ""
+            )
+
+        icon = os.path.join(wb_dir, "shoelast_wb", "resources", "shoelast_wb.svg")
+        self.Icon = icon
+
+        # Locate macros directory.
+        env = os.environ.get("SHOELAST_MACROS", "").strip()
+        if env and os.path.isdir(env):
+            macros = env
+        elif os.path.isdir(os.path.join(wb_dir, "macros")):
+            macros = os.path.join(wb_dir, "macros")
+        elif os.path.isfile(os.path.join(wb_dir, "uv_0.py")):
+            macros = wb_dir
+        else:
+            dev = os.path.join(str(Path.home()), "00_ausr", "work", "freecad", "macros")
+            macros = dev if os.path.isdir(dev) else None
+
         if not macros:
             App.Console.PrintError(
                 "ShoelastWB: macros directory not found.\n"
-                "  Option A: set the SHOELAST_MACROS environment variable to the macros folder.\n"
-                "  Option B: place the macros folder inside the workbench directory as 'macros/'.\n"
+                "  Option A: set SHOELAST_MACROS env var to the macros folder path.\n"
+                "  Option B: place macros folder inside the workbench dir as 'macros/'.\n"
             )
             return
 
@@ -64,7 +54,7 @@ class ShoelastWorkbench(Gui.Workbench):
                 self._label  = label
                 self._tip    = tip
                 self._script = os.path.join(macros, script)
-                self._icon   = _icon
+                self._icon   = icon
             def GetResources(self):
                 return {"Pixmap":   self._icon,
                         "MenuText": self._label,
@@ -97,5 +87,4 @@ class ShoelastWorkbench(Gui.Workbench):
         return "Gui::PythonWorkbench"
 
 
-ShoelastWorkbench.Icon = _icon  # safe here - _icon is in globals by the time class is defined
 Gui.addWorkbench(ShoelastWorkbench())
