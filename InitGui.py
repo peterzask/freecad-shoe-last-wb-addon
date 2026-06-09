@@ -1,29 +1,51 @@
 import os
 import sys
-import pwd
+from pathlib import Path
 import FreeCADGui as Gui
 import FreeCAD as App
 
-# snap overrides $HOME to the snap version dir; pwd gives the real home
-_real_home = pwd.getpwuid(os.getuid()).pw_dir
+# Workbench root: the directory containing this InitGui.py.
+# Using __file__ avoids the sys.path search and works on all platforms.
+_wb_dir = os.path.dirname(os.path.abspath(__file__))
+_icon   = os.path.join(_wb_dir, "shoelast_wb", "resources", "shoelast_wb.svg")
+
+
+def _find_macros():
+    """Return the macros directory path, or None if not found.
+    Search order:
+      1. SHOELAST_MACROS env var (user sets this on Windows or non-standard installs)
+      2. macros/ subfolder bundled inside the workbench dir
+      3. Workbench dir itself (flat layout: all .py files alongside InitGui.py)
+      4. Linux dev path ~/00_ausr/work/freecad/macros (fallback for the dev machine)
+    """
+    env = os.environ.get("SHOELAST_MACROS", "").strip()
+    if env and os.path.isdir(env):
+        return env
+    bundled = os.path.join(_wb_dir, "macros")
+    if os.path.isdir(bundled):
+        return bundled
+    if os.path.isfile(os.path.join(_wb_dir, "uv_0.py")):
+        return _wb_dir
+    dev = os.path.join(str(Path.home()), "00_ausr", "work", "freecad", "macros")
+    if os.path.isdir(dev):
+        return dev
+    return None
 
 
 class ShoelastWorkbench(Gui.Workbench):
     MenuText = "Shoelast WB"
     ToolTip  = "Workbench to make 3D printable shoe lasts from foot measurements"
-    Icon     = ""   # set below
+    Icon     = _icon
 
     def Initialize(self):
-        # Compute paths here — exec() globals are gone by the time Initialize() runs.
-        # os and sys are reliable; user-defined module-level names are not.
-        import pwd as _pwd
-        real_home = _pwd.getpwuid(os.getuid()).pw_dir
-        wb = next(
-            (p for p in sys.path if os.path.isdir(os.path.join(p, "shoelast_wb"))),
-            os.path.join(real_home, "snap", "freecad", "common", "Mod", "freecad.shoe_last_wb")
-        )
-        icon_dir = os.path.join(wb, "shoelast_wb", "resources")
-        macros   = os.path.join(real_home, "00_ausr", "work", "freecad", "macros")
+        macros = _find_macros()
+        if not macros:
+            App.Console.PrintError(
+                "ShoelastWB: macros directory not found.\n"
+                "  Option A: set the SHOELAST_MACROS environment variable to the macros folder.\n"
+                "  Option B: place the macros folder inside the workbench directory as 'macros/'.\n"
+            )
+            return
 
         if macros not in sys.path:
             sys.path.insert(0, macros)
@@ -34,14 +56,14 @@ class ShoelastWorkbench(Gui.Workbench):
             def __init__(self, label, tip, script):
                 self._label  = label
                 self._tip    = tip
-                self._script = script
-                self._icon   = os.path.join(icon_dir, "shoelast_wb.svg")
+                self._script = os.path.join(macros, script)
+                self._icon   = _icon
             def GetResources(self):
                 return {"Pixmap":   self._icon,
                         "MenuText": self._label,
                         "ToolTip":  self._tip}
             def Activated(self):
-                runpy.run_path(os.path.join(macros, self._script))
+                runpy.run_path(self._script)
             def IsActive(self):
                 return App.ActiveDocument is not None
 
@@ -68,10 +90,4 @@ class ShoelastWorkbench(Gui.Workbench):
         return "Gui::PythonWorkbench"
 
 
-# Icon set after class — class body cannot see module-level vars under exec()
-ShoelastWorkbench.Icon = os.path.join(
-    next((p for p in sys.path if os.path.isdir(os.path.join(p, "shoelast_wb"))),
-         os.path.join(_real_home, "snap", "freecad", "common", "Mod", "freecad.shoe_last_wb")),
-    "shoelast_wb", "resources", "shoelast_wb.svg"
-)
 Gui.addWorkbench(ShoelastWorkbench())
