@@ -42,7 +42,7 @@ def _find_macros():
 class ShoelastWorkbench(Gui.Workbench):
     MenuText = "Shoelast WB"
     ToolTip  = "Workbench to make 3D printable shoe lasts from foot measurements"
-    Icon     = _icon
+    Icon     = ""  # set below — class body cannot see module-level vars under FreeCAD exec()
 
     def Initialize(self):
         macros = _find_macros()
@@ -97,4 +97,5 @@ class ShoelastWorkbench(Gui.Workbench):
         return "Gui::PythonWorkbench"
 
 
+ShoelastWorkbench.Icon = _icon  # safe here — _icon is in globals by the time class is defined
 Gui.addWorkbench(ShoelastWorkbench())
