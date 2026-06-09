@@ -5,8 +5,15 @@ import FreeCADGui as Gui
 import FreeCAD as App
 
 # Workbench root: the directory containing this InitGui.py.
-# Using __file__ avoids the sys.path search and works on all platforms.
-_wb_dir = os.path.dirname(os.path.abspath(__file__))
+# __file__ is not defined when FreeCAD 1.x execs InitGui.py on Windows,
+# so fall back to searching sys.path for the directory that contains shoelast_wb/.
+try:
+    _wb_dir = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    _wb_dir = next(
+        (p for p in sys.path if os.path.isdir(os.path.join(p, "shoelast_wb"))),
+        ""
+    )
 _icon   = os.path.join(_wb_dir, "shoelast_wb", "resources", "shoelast_wb.svg")
 
 
